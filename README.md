@@ -214,9 +214,11 @@ while ((compile0utputLine = bufferedReader.readLine()) != null) {
    ```
    还可以使用字典树代替列表存储单词，用**更少的空间**存储更多的敏感词汇，并且实现**更高效**的敏感词查找<br>
    字典树的原理:<br>
-![img_2.png](doc%2Fimg_2.png)
-此处使用 HuTool 工具库的字典树工具类:WordTree，不用自己写字典树!<br>
+   ![img_2.png](doc%2Fimg_2.png)
+   此处使用 HuTool 工具库的字典树工具类:WordTree，不用自己写字典树!<br>
+
 - 先初始化字典树，插入禁用词:
+
 ```
 private static final WordTree WORD_TREE;
 
@@ -226,7 +228,9 @@ static {
   WORD_TREE.addWords(BLACK_LIST);
 }
 ```
+
 - 校验用户代码是否包含禁用词:
+
 ```
 //校验用户代码是否有黑名单中的操作
 FoundWord foundWord = WORD_TREE.matchWord(code);
@@ -235,6 +239,8 @@ if(foundWord!=null){
    return null;
 }
 ```
+
 **本方案缺点**
+
 - 你无法遍历所有的黑名单
 - 不同的编程语言，你对应的领域、关键词都不一样，限制人工成本很大
