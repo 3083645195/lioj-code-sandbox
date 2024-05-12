@@ -212,7 +212,7 @@ while ((compile0utputLine = bufferedReader.readLine()) != null) {
     */
    private static final List<String> BLACK_LIST = Arrays.asList("Files","exec");
    ```
-   还可以使用字典树代替列表存储单词，用**更少的空间**存储更多的敏感词汇，并且实现**更高效**的敏感词查找<br>
+   还可以使用字典树代替列表存储单词，用 **更少的空间** 存储更多的敏感词汇，并且实现 **更高效** 的敏感词查找<br>
    字典树的原理:<br>
    ![img_2.png](doc%2Fimg_2.png)
    此处使用 HuTool 工具库的字典树工具类:WordTree，不用自己写字典树!<br>
