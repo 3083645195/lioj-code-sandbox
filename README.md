@@ -97,7 +97,7 @@
 > 到目前为止，核心流程已经实现，但是想要上线的话，安全么?<br>
 > 用户提交恶意代码，怎么办?
 
-1. 占用时间资源，导致程序卡死，不释放资源<br>
+### 1. 占用时间资源，导致程序卡死，不释放资源
    无限睡眠(阻塞程序执行)
 
 ```
@@ -105,7 +105,7 @@ long ONE HOUR = 60 * 60* 1000L;
 Thread.sleep(ONE HOUR);
 ```
 
-2. 占用内存<br>
+### 2. 占用内存
    占用内存资源，导致空间浪费
 
 ```
@@ -122,7 +122,7 @@ while(true){
 如图:<br>
 ![img_1.png](doc%2Fimg_1.png)
 
-3. 读文件，信息泄露<br>
+### 3. 读文件，信息泄露
    比如直接通过相对路径获取项目配置文件，获取到密码
 
 ```
@@ -132,7 +132,7 @@ List<string>allLines = Files.readAllLines(Paths.get(filePath));
 System.out.println(String.join("\n",allLines));
 ```
 
-4. 写文件，植入木马<br>
+### 4. 写文件，植入木马
    可以直接向服务器上写入文件，比如一个木马程序:```java -version 2>&1```(示例命令)
 
 > 1.java -version 用于显示 Java 版本信息。这会将版本信息输出到标准错误流(stderr)而不是标准输出流(stdout)<br>
@@ -145,7 +145,7 @@ String errorProgram = "java - version 2 > & 1 ";
 Files.write(Paths.get(filePath), Arrays.asList(errorProgram));
 ```
 
-5. 运行其他程序<br>
+### 5. 运行其他程序
    直接通过 Process 执行危险程序，或者电脑上的其他程序
 
 ```
@@ -163,15 +163,15 @@ while ((compile0utputLine = bufferedReader.readLine()) != null) {
 }
 ```
 
-6. 执行高危操作<br>
+### 6. 执行高危操作
    甚至都不用写木马文件，直接执行系统自带的危险命令!
 
-- 比如删除服务器的所有文件(太残暴、不演示)
+- 比如删除服务器的所有文件
 - 比如执行 dir(windows)、ls(linux)获取你系统上的所有文件信息
 
 ## Java 程序安全控制
 
-1.超时控制<br>
+### 1. 超时控制<br>
 通过创建一个守护线程，超时后自动中断 Process 实现
 
    ```
@@ -189,7 +189,7 @@ while ((compile0utputLine = bufferedReader.readLine()) != null) {
     }).start();
    ```
 
-2. 限制资源分配<br>
+### 2. 限制资源分配
    我们不能让每个 java 进程的执行占用的 JM 最大堆内存空间都和系统默认的一致(我的 JM 默认最大占用8G 内存)，实际上应该更小(
    执行用户的题目代码也不需要这么多)，比如说 512MB。<br>
    在启动 Java 程序时，可以指定JVM 的参数:-Xmx256m(最大堆空间大小)示例命令如下
@@ -204,7 +204,7 @@ while ((compile0utputLine = bufferedReader.readLine()) != null) {
 
    > **cgroup** 是 Linux 内核提供的一种机制，可以用来限制进程组(包括子进程)的资源使用，例如内存、CPU、磁盘 I/0 等。通过将
    Java 进程放置在特定的cgroup 中，你可以实现限制其使用的内存和 CPU 数。
-3. 限制代码-黑白名单<br>
+### 3. 限制代码-黑白名单
    实现:先定义一个黑白名单，比如哪些操作是禁止的，可以就是一个列表
    ```
    /**
@@ -244,3 +244,60 @@ if(foundWord!=null){
 
 - 你无法遍历所有的黑名单
 - 不同的编程语言，你对应的领域、关键词都不一样，限制人工成本很大
+
+### 4. 限制权限-Java 安全管理器
+   目标:限制用户对文件、内存、CPU、网络等资源的操作和访问。<br>
+   **Java 安全管理器使用**<br>
+   Java 安全管理器(Security Manager)是Java 提供的保护JM、Java 安全的机制，可以实现更严格的资源和操作限制。<br>
+
+   编写安全管理器，只需要继承 Security Manager
+
+    - 所有权限放开
+    - 所有权限拒绝
+    - 限制读权限
+    - 限制写文件权限
+    - 限制执行文件权限
+    - 限制网络连接权限
+
+**结合项目运用**
+实际情况下，不应该在主类(开发者自己写的程序)
+中做限制，只需要限制子程序的权限即可。启动子进程执行命令时，设置安全管理器，而不是在外层设置(
+会限制住测试用例的读写和子命令的执行)<br>
+具体操作如下:
+
+1. 根据需要开发自定义的安全管理器(比如 MySecurityManager)
+2. 复制 MySecurityManager类到 resources/security 目录下，移除类的包名
+3. 手动输入命令编译 MySecurityManager 类，得到 class 文件
+4. 在运行java 程序时，指定安全管理器 class 文件的路径、安全管理器的名称。
+
+> 注意，windows 下要用分号间隔多个类路径!
+
+```
+ /**
+  * security 所在的路径
+  */
+ private static final String SECURITY_MANAGER_PATH = "D:\\java\\项目\\OJ判题系统\\lioj-code-sandbox\\src\\main\\resources\\security";
+ /**
+  * SecurityManager.class 的名称
+  */
+ private static final String SECURITY_MANAGER_CLASS_NAME = "MySecurityManager";
+
+ String runCmd = String.format("java -Xmx512m -Dfile.encoding=UTF-8 -cp %s;%s -Djava.security.manager=%s Main %s", userCodeParentPath, SECURITY_MANAGER_PATH, SECURITY_MANAGER_CLASS_NAME, inputArgs);
+```
+
+依次执行之前的所有测试用例，发现资源成功被限制。
+![img_3.png](doc%2Fimg_3.png)
+
+**安全管理器优点**
+
+- 权限控制很灵活 
+- 实现简单
+
+**安全管理器缺点**
+
+- 如果要做比较严格的权限限制，需要自己去判断哪些文件、包名需要允许读写。粒度太细了，难以精细化控制。
+- 安全管理器本身也是Java 代码，也有可能存在漏洞。本质上还是程序层面的限制，没深入系统的层面。
+
+### 5. 运行环境隔离
+原理:操作系统层面上，把用户程序封装到沙箱里，和宿主机(我们的电脑/服务器)隔离开，使得用户的程序无法影响宿主机。<br>
+实现方式:Docker容器技术(底层是用 cgroup、namespace 等方式实现的)，也可以直接使用cgroup 实现。

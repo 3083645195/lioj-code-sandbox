@@ -36,7 +36,7 @@ public class ProcessUtils {
                 //逐行读取
                 String compileOutputLine;
                 while ((compileOutputLine = bufferedReader.readLine()) != null) {
-                    compileOutputStringBuffer.append(compileOutputLine).append("\n");
+                    compileOutputStringBuffer.append(compileOutputLine);
                 }
                 executeMessage.setMessage(compileOutputStringBuffer.toString());
             } else {

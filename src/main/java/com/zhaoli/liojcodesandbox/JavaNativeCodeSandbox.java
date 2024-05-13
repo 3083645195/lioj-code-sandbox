@@ -3,7 +3,6 @@ package com.zhaoli.liojcodesandbox;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.dfa.FoundWord;
 import cn.hutool.dfa.WordTree;
 import com.zhaoli.liojcodesandbox.model.ExecuteCodeRequest;
 import com.zhaoli.liojcodesandbox.model.ExecuteCodeResponse;
@@ -11,10 +10,8 @@ import com.zhaoli.liojcodesandbox.model.ExecuteMessage;
 import com.zhaoli.liojcodesandbox.model.JudgeInfo;
 import com.zhaoli.liojcodesandbox.utils.ProcessUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +35,15 @@ public class JavaNativeCodeSandbox implements CodeSandbox {
     /**
      * 用户代码执行黑名单
      */
-    private static final List<String> BLACK_LIST = Arrays.asList("Files","exec");
+    private static final List<String> BLACK_LIST = Arrays.asList("Files", "exec");
+    /**
+     * security 所在的路径
+     */
+    private static final String SECURITY_MANAGER_PATH = "D:\\java\\鱼皮\\项目\\OJ判题系统\\lioj-code-sandbox\\src\\main\\resources\\security";
+    /**
+     * SecurityManager.class 的名称
+     */
+    private static final String SECURITY_MANAGER_CLASS_NAME = "MySecurityManager";
     private static final WordTree WORD_TREE;
 
     static {
@@ -53,11 +58,11 @@ public class JavaNativeCodeSandbox implements CodeSandbox {
         String code = executeCodeRequest.getCode();
         String language = executeCodeRequest.getLanguage();
         //校验用户代码是否有黑名单中的操作
-        FoundWord foundWord = WORD_TREE.matchWord(code);
-        if(foundWord!=null){
-            System.out.println("包含敏感词："+foundWord.getFoundWord());
-            return null;
-        }
+//        FoundWord foundWord = WORD_TREE.matchWord(code);
+//        if(foundWord!=null){
+//            System.out.println("包含敏感词："+foundWord.getFoundWord());
+//            return null;
+//        }
 
         // 1.把用户的代码保存为文件
         String userDir = System.getProperty("user.dir");// 获取当前用户工作目录路径
@@ -85,14 +90,16 @@ public class JavaNativeCodeSandbox implements CodeSandbox {
         List<ExecuteMessage> executeMessageList = new ArrayList<>();
         for (String inputArgs : inputList) {
             String runCmd = String.format("java -Xmx512m -Dfile.encoding=UTF-8 -cp %s Main %s", userCodeParentPath, inputArgs);
+            //加上java安全管理器
+//            String runCmd = String.format("java -Xmx512m -Dfile.encoding=UTF-8 -cp %s;%s -Djava.security.manager=%s Main %s", userCodeParentPath, SECURITY_MANAGER_PATH, SECURITY_MANAGER_CLASS_NAME, inputArgs);
             try {
                 Process runProcess = Runtime.getRuntime().exec(runCmd);
                 //执行外部命令，并设置了一个超时时间，在超时之后如果进程仍未执行完毕，则销毁这个进程
-                new Thread(()->{
+                new Thread(() -> {
                     try {
                         Thread.sleep(TIME_OUT);
                     } catch (InterruptedException e) {
-                       throw new IllegalStateException();
+                        throw new IllegalStateException();
                     }
                     if (runProcess.isAlive()) {
                         System.out.println("超时了，中断！");
@@ -165,8 +172,8 @@ public class JavaNativeCodeSandbox implements CodeSandbox {
         JavaNativeCodeSandbox javaNativeCodeSandbox = new JavaNativeCodeSandbox();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
         executeCodeRequest.setInputList(Arrays.asList("1 2", "1 3"));
-//        String code = ResourceUtil.readStr("testCode/simpleComputeArgs/Main.java", StandardCharsets.UTF_8);
-        String code = ResourceUtil.readStr("testCode/unsafeCode/RunFileError.java", StandardCharsets.UTF_8);
+        String code = ResourceUtil.readStr("testCode/simpleComputeArgs/Main.java", StandardCharsets.UTF_8);
+//        String code = ResourceUtil.readStr("testCode/unsafeCode/RunFileError.java", StandardCharsets.UTF_8);
         executeCodeRequest.setCode(code);
         executeCodeRequest.setLanguage("java");
         ExecuteCodeResponse executeCodeResponse = javaNativeCodeSandbox.executeCode(executeCodeRequest);

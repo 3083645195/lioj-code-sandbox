@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         String userDir = System.getProperty("user.dir");
+//        String userDir="D:\\java\\鱼皮\\项目\\OJ判题系统\\lioj-code-sandbox";
         String filePath = userDir + File.separator + "src/main/resources/木马程序.bat";
         Process process = Runtime.getRuntime().exec(filePath);
         process.waitFor();
