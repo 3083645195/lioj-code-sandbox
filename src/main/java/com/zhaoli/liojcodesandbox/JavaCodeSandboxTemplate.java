@@ -88,15 +88,13 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
 
             // 4.收集整理输出结果
             ExecuteCodeResponse executeCodeResponse = getOutputResponse(executeMessageList);
-
-            // 5.文件清理，释放空间
-            boolean result = deleteFile(userCodeFile);
-            if (!result) {
-                log.error("deleteFile error,userCodeFilePath{}" + userCodeFile.getAbsolutePath());
-            }
         } catch (Exception e) {
             throw new RuntimeException("异常");
         } finally {
+            boolean result = deleteFile();
+            if (!result) {
+                log.error("deleteFile error,userCodeFilePath{}" + USER_CODE_PARENT_PATH);
+            }
             return executeCodeResponse;
         }
     }
@@ -192,7 +190,7 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
      * @return
      */
     public ExecuteCodeResponse getOutputResponse(List<ExecuteMessage> executeMessageList) {
-        ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
+        executeCodeResponse = new ExecuteCodeResponse();
         List<String> outputList = new ArrayList<>();
         //取用时最大值，便于判断是否超时
         long maxTime = 0;
@@ -228,11 +226,10 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
     /**
      * 5.文件清理，释放空间
      *
-     * @param userCodeFile 用户代码的路径
      * @return
      */
-    public boolean deleteFile(File userCodeFile) {
-        if (userCodeFile.getParentFile() != null) {
+    public boolean deleteFile() {
+        if (FileUtil.exist(USER_CODE_PARENT_PATH)) {
             boolean delResult = FileUtil.del(USER_CODE_PARENT_PATH);
             System.out.println("删除" + (delResult ? "成功" : "失败"));
             return delResult;
