@@ -2,10 +2,7 @@ package com.zhaoli.liojcodesandbox;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
-import com.zhaoli.liojcodesandbox.model.ExecuteCodeRequest;
-import com.zhaoli.liojcodesandbox.model.ExecuteCodeResponse;
-import com.zhaoli.liojcodesandbox.model.ExecuteMessage;
-import com.zhaoli.liojcodesandbox.model.JudgeInfo;
+import com.zhaoli.liojcodesandbox.model.*;
 import com.zhaoli.liojcodesandbox.utils.ProcessUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,40 +50,55 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
      * SecurityManager.class 的名称
      */
     private static final String SECURITY_MANAGER_CLASS_NAME = "MySecurityManager";
+    /**
+     * 返回响应
+     */
+    private static ExecuteCodeResponse executeCodeResponse;
+
+    /**
+     * 判题信息
+     */
+    private static JudgeInfo judgeInfo;
 
     static {
         USER_DIR = System.getProperty("user.dir");// 获取当前用户工作目录路径
         // 构建全局代码路径名，使用文件分隔符以便在不同操作系统上正确组合路径
         GLOBAL_CODE_PATH_NAME = USER_DIR + File.separator + GLOBAL_CODE_DIR_NAME;
+        executeCodeResponse = new ExecuteCodeResponse();
+        judgeInfo = new JudgeInfo();
     }
 
     @Override
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
-        List<String> inputList = executeCodeRequest.getInputList();
-        String code = executeCodeRequest.getCode();
-        String language = executeCodeRequest.getLanguage();
+        try {
+            List<String> inputList = executeCodeRequest.getInputList();
+            String code = executeCodeRequest.getCode();
+            String language = executeCodeRequest.getLanguage();
 
-        //1.把用户的代码保存为文件
-        File userCodeFile = saveCodeToFile(code);
+            //1.把用户的代码保存为文件
+            File userCodeFile = saveCodeToFile(code);
 
-        // 2.编译代码，得到 class 文件
-        ExecuteMessage compileFileExecuteMessage = compileFile(userCodeFile);
-        System.out.println(compileFileExecuteMessage);
+            // 2.编译代码，得到 class 文件
+            ExecuteMessage compileFileExecuteMessage = compileFile(userCodeFile);
+            System.out.println(compileFileExecuteMessage);
 
 
-        // 3.执行代码，得到输出结果
-        List<ExecuteMessage> executeMessageList = runFile(inputList);
+            // 3.执行代码，得到输出结果
+            List<ExecuteMessage> executeMessageList = runFile(inputList);
 
-        // 4.收集整理输出结果
-        ExecuteCodeResponse executeCodeResponse = getOutputResponse(executeMessageList);
+            // 4.收集整理输出结果
+            ExecuteCodeResponse executeCodeResponse = getOutputResponse(executeMessageList);
 
-        // 5.文件清理，释放空间
-        boolean result = deleteFile(userCodeFile);
-        if (!result) {
-            log.error("deleteFile error,userCodeFilePath{}" + userCodeFile.getAbsolutePath());
+            // 5.文件清理，释放空间
+            boolean result = deleteFile(userCodeFile);
+            if (!result) {
+                log.error("deleteFile error,userCodeFilePath{}" + userCodeFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("异常");
+        } finally {
+            return executeCodeResponse;
         }
-
-        return executeCodeResponse;
     }
 
     /**
@@ -119,6 +131,8 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
             Process compileProcess = Runtime.getRuntime().exec(comoileCmd);
             ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(compileProcess, "编译");
             if (executeMessage.getExitValue() != 0) {
+                judgeInfo.setMessage(JudgeInfoMessageEnum.COMPILE_ERROR.getText());
+                executeCodeResponse.setJudgeInfo(judgeInfo);
                 throw new RuntimeException("编译错误");
             }
             return executeMessage;
@@ -146,16 +160,24 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
                     try {
                         Thread.sleep(TIME_OUT);
                     } catch (InterruptedException e) {
+                        judgeInfo.setMessage(JudgeInfoMessageEnum.SYSTEM_ERROR.getText());
+                        executeCodeResponse.setJudgeInfo(judgeInfo);
                         throw new IllegalStateException();
                     }
                     if (runProcess.isAlive()) {
                         System.out.println("超时了，中断！");
+                        judgeInfo.setMessage(JudgeInfoMessageEnum.TIME_LIMIT_EXCEEDED.getText());
+                        executeCodeResponse.setJudgeInfo(judgeInfo);
                         runProcess.destroy();
                     }
                 }).start();
                 ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(runProcess, "运行");
                 System.out.println(executeMessage);
                 executeMessageList.add(executeMessage);
+                if (executeMessage.getErrorMessage() != null) {
+                    judgeInfo.setMessage(JudgeInfoMessageEnum.RUNTIME_ERROR.getText());
+                    executeCodeResponse.setJudgeInfo(judgeInfo);
+                }
             } catch (IOException e) {
                 throw new RuntimeException("执行错误", e);
             }
@@ -195,6 +217,7 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
         executeCodeResponse.setOutputList(outputList);
         JudgeInfo judgeInfo = new JudgeInfo();
         judgeInfo.setTime(maxTime);
+        judgeInfo.setMessage(JudgeInfoMessageEnum.ACCEPTED.getText());
         //要借助第三方库来获取内存占用，非常麻烦，此处不做实现
 //        judgeInfo.setMemory();
         executeCodeResponse.setJudgeInfo(judgeInfo);

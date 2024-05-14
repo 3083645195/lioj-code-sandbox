@@ -10,3 +10,4 @@ public class Main {
         System.out.println("结果：" + (a + b));
     }
 }
+
