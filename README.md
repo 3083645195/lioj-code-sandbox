@@ -121,8 +121,7 @@ while(true){
 ，而不是无限增加内存占用，直到系统死机。<br>
 **这是 JVM 的一个保护机制**。
 可以使用 IisualVM 或JConsole 工具，连接到 IM 虚拟机上来可视化查看运行状态<br>
-如图:<br>
-![img_1.png](doc%2Fimg_1.png)
+如图:<br>![img_1](https://zhaoli-image.oss-cn-beijing.aliyuncs.com/img/img_1.png)
 
 ### 3. 读文件，信息泄露
 
@@ -226,7 +225,7 @@ while ((compile0utputLine = bufferedReader.readLine()) != null) {
 
 还可以使用字典树代替列表存储单词，用 **更少的空间** 存储更多的敏感词汇，并且实现 **更高效** 的敏感词查找<br>
 字典树的原理:<br>
-![img_2.png](doc%2Fimg_2.png)
+![img_2](https://zhaoli-image.oss-cn-beijing.aliyuncs.com/img/img_2.png)
 此处使用 HuTool 工具库的字典树工具类:WordTree，不用自己写字典树!<br>
 
 - 先初始化字典树，插入禁用词:
@@ -299,7 +298,7 @@ Java 安全管理器(Security Manager)是Java 提供的保护JM、Java 安全的
 ```
 
 依次执行之前的所有测试用例，发现资源成功被限制。
-![img_3.png](doc%2Fimg_3.png)
+![img_3](https://zhaoli-image.oss-cn-beijing.aliyuncs.com/img/img_3.png)
 
 **安全管理器优点**
 
@@ -334,7 +333,7 @@ Docker 能实现哪些资源的隔离?<br>
 3. Network 网络:实现容器的网络隔离，docker 容器内部的网络互不影响
 4. Namespaces 命名空间:可以把进程隔离在不同的命名空间下，每个容器他都可以有自己的命名空间，不同的命名空间下的进程互不影响。
 5. Storage 存储空间:容器内的文件是相互隔离的，也可以去使用宿主机的文件
-   ![img_4.png](doc%2Fimg_4.png)
+   ![img_4](https://zhaoli-image.oss-cn-beijing.aliyuncs.com/img/img_4.png)
 
 ### Java 操作 Docker
 
